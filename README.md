@@ -6,6 +6,15 @@ This repository contains sample code demonstrating how to integrate the Wizlo AP
 
 | Folder | Description |
 |---|---|
+| `src/` | New sample application scaffold for the Base44/Wizlo integration test app |
+| `src/api` | API clients and feature-specific request modules |
+| `src/components` | Reusable UI components, feature sections, and layout pieces |
+| `src/entities` | JSON entity definitions for intake forms, orders, and products |
+| `src/functions` | Helper functions for external services like Gr4vy and Wizlo proxies |
+| `src/hooks` | Custom React hooks |
+| `src/lib` | App utilities, auth context, and shared helpers |
+| `src/pages` | Page-level components for admin, portal, and public routes |
+| `src/utils` | TypeScript utility exports |
 | `intake-form/with-wizlo` | Patient intake form integrated with Wizlo API |
 | `intake-form/without-wizlo` | Patient intake form (standalone, no Wizlo) |
 | `encounters` | Encounter creation flow using Wizlo |
