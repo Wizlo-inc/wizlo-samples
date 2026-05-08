@@ -1,0 +1,11 @@
+{
+  "name": "wizlo-samples",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix encounters/backend && npm install --prefix encounters/frontend && npm install --prefix orders/backend && npm install --prefix orders/frontend && npm install --prefix intake-form/with-wizlo/backend && npm install --prefix intake-form/with-wizlo/frontend && npm install --prefix intake-form/without-wizlo/backend && npm install --prefix intake-form/without-wizlo/frontend && npm install --prefix payment/with-wizlo/backend && npm install --prefix payment/with-wizlo/frontend && npm install --prefix payment/without-wizlo/backend && npm install --prefix payment/without-wizlo/frontend",
+    "dev": "concurrently --kill-others-on-fail --names \"enc-api,enc-web,ord-api,ord-web,intf-wiz-api,intf-wiz-web,intf-loc-api,intf-loc-web,pay-wiz-api,pay-wiz-web,pay-loc-api,pay-loc-web\" --prefix-colors \"blue,cyan,green,greenBright,yellow,yellowBright,magenta,magentaBright,red,redBright,white,gray\" \"npm run dev --prefix encounters/backend\" \"npm run dev --prefix encounters/frontend\" \"npm run dev --prefix orders/backend\" \"npm run dev --prefix orders/frontend\" \"npm run dev --prefix intake-form/with-wizlo/backend\" \"npm run dev --prefix intake-form/with-wizlo/frontend\" \"npm run dev --prefix intake-form/without-wizlo/backend\" \"npm run dev --prefix intake-form/without-wizlo/frontend\" \"npm run dev --prefix payment/with-wizlo/backend\" \"npm run dev --prefix payment/with-wizlo/frontend\" \"npm run dev --prefix payment/without-wizlo/backend\" \"npm run dev --prefix payment/without-wizlo/frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
