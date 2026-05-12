@@ -9,6 +9,10 @@ export class FormsService {
     return this.wizlo.request('/forms?status=published&page=1&limit=50');
   }
 
+  async getFormDetail(formId: string) {
+    return this.wizlo.request(`/forms/${formId}`);
+  }
+
   async getFormSchema(formId: string) {
     return this.wizlo.request(`/forms/${formId}/schema`);
   }

@@ -10,12 +10,12 @@ export class OrdersService {
     return this.wizlo.request('/tenants/orders', {
       method: 'POST',
       body: JSON.stringify({
-        clinicId: process.env.WIZLO_CLINIC_ID || '1d836ade-bb7e-47a5-9f4a-d2c45ad8dad6',
+        clinicId: process.env.WIZLO_CLINIC_ID,
         patient_id: dto.patientId,
         items: [{ productOfferId: dto.productOfferId, qty: dto.qty ?? 1 }],
-        serviceQueue: 'internal_staff',
-        reviewType: 'asynchronous',
-        source: 'CLINIC',
+        serviceQueue: dto.serviceQueue ?? 'internal_staff',
+        reviewType: dto.reviewType ?? 'asynchronous',
+        source: dto.source ?? 'CLINIC',
       }),
     });
   }
