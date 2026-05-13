@@ -1,6 +1,13 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
-export async function createOrder(data: { patientId: string; productOfferId: string; qty: number }) {
+export async function createOrder(data: {
+  patientId: string;
+  productOfferId: string;
+  qty?: number;
+  serviceQueue?: string;
+  reviewType?: string;
+  source?: string;
+}) {
   const res = await fetch(`${API_URL}/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
