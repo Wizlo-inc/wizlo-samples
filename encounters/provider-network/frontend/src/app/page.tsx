@@ -1,0 +1,98 @@
+'use client';
+import { useState } from 'react';
+import { createEncounter } from '@/lib/api';
+
+export default function ProviderNetworkPage() {
+  const [patientId, setPatientId] = useState('49f623c9-0fc3-4e66-9b5e-56c955a71e43');
+  const [providerNetworkTenantId, setProviderNetworkTenantId] = useState('');
+  const [formIds, setFormIds] = useState('');
+  const [treatmentIds, setTreatmentIds] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [result, setResult] = useState<unknown>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+    setError('');
+    try {
+      const data = await createEncounter({
+        patientId,
+        providerNetworkTenantId,
+        formIds: formIds.split(',').map(s => s.trim()).filter(Boolean),
+        treatmentIds: treatmentIds ? treatmentIds.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+        additionalNotes: additionalNotes || undefined,
+      });
+      setResult(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="container">
+      <h1>Provider Network Encounter</h1>
+      <p className="subtitle">
+        Routes to an external provider network instead of internal staff. The network assigns a licensed provider automatically.
+      </p>
+      <div className="card">
+        <span className="badge">serviceQueue: provider_network · reviewType: asynchronous</span>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Patient ID *</label>
+            <input type="text" value={patientId} onChange={e => setPatientId(e.target.value)} required />
+          </div>
+          <div className="form-group">
+            <label>Provider Network Tenant ID *</label>
+            <input
+              type="text"
+              value={providerNetworkTenantId}
+              onChange={e => setProviderNetworkTenantId(e.target.value)}
+              placeholder="provider-network-tenant-uuid"
+              required
+            />
+            <p className="hint">UUID of the external provider network tenant. Can also be set via WIZLO_PROVIDER_NETWORK_TENANT_ID in .env</p>
+          </div>
+          <div className="form-group">
+            <label>Form IDs * <small>(required by M2M — at least one)</small></label>
+            <input
+              type="text"
+              value={formIds}
+              onChange={e => setFormIds(e.target.value)}
+              placeholder="form-template-uuid-1, form-template-uuid-2"
+              required
+            />
+            <p className="hint">Comma-separated form template UUIDs. Required for M2M encounter creation.</p>
+          </div>
+          <div className="form-group">
+            <label>Treatment IDs</label>
+            <input
+              type="text"
+              value={treatmentIds}
+              onChange={e => setTreatmentIds(e.target.value)}
+              placeholder="treatment-uuid-1, treatment-uuid-2"
+            />
+            <p className="hint">Comma-separated UUIDs</p>
+          </div>
+          <div className="form-group">
+            <label>Additional Notes</label>
+            <textarea value={additionalNotes} onChange={e => setAdditionalNotes(e.target.value)} placeholder="Any additional notes..." />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Creating...' : 'Create Provider Network Encounter'}
+          </button>
+        </form>
+        {result !== null && (
+          <div className="result-box">
+            <pre>{JSON.stringify(result, null, 2)}</pre>
+          </div>
+        )}
+        {error && <div className="error-box">{error}</div>}
+      </div>
+    </div>
+  );
+}
