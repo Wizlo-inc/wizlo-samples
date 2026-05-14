@@ -1,9 +1,12 @@
 'use client';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
-  createSubscription, checkout, markPaid,
+  createSubscription, getEmbedToken, markPaid,
   getSubscription, getOrders, getTransactions,
 } from '@/lib/api';
+
+const Gr4vyPayment = dynamic(() => import('@/components/Gr4vyPayment'), { ssr: false });
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -45,7 +48,7 @@ export default function EnrollmentPage() {
   const [createRaw, setCreateRaw] = useState<unknown>(null);
 
   // ── Step 2 — Checkout ────────────────────────────────────────
-  const [couponCode, setCouponCode] = useState('');
+  const [embedAmount, setEmbedAmount] = useState('');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
@@ -55,6 +58,7 @@ export default function EnrollmentPage() {
   const [markLoading, setMarkLoading] = useState(false);
   const [markError, setMarkError] = useState('');
   const [markResult, setMarkResult] = useState<unknown>(null);
+  const [gr4vySubmit, setGr4vySubmit] = useState<(() => void) | null>(null);
 
   // ── Step 4 — Confirmation ────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'details' | 'orders' | 'transactions'>('details');
@@ -94,28 +98,31 @@ export default function EnrollmentPage() {
     setCheckoutLoading(true);
     setCheckoutError('');
     try {
-      const payload: { clientSubscriptionId: string; couponCode?: string } = {
-        clientSubscriptionId: subscriptionId,
-      };
-      if (couponCode.trim()) payload.couponCode = couponCode.trim();
-      const data = await checkout(payload) as CheckoutData;
-      setCheckoutData(data);
+      const amountCents = embedAmount ? Math.round(parseFloat(embedAmount) * 100) : 1000;
+      const data = await getEmbedToken({
+        amount: amountCents,
+        currency: 'USD',
+        buyerExternalIdentifier: patientId,
+      }) as { token: string };
+      setCheckoutData({ token: data.token, amount: amountCents, currency: 'USD' });
       setStep(3);
     } catch (e: unknown) {
-      setCheckoutError(e instanceof Error ? e.message : 'Checkout failed');
+      setCheckoutError(e instanceof Error ? e.message : 'Failed to generate payment token');
     } finally {
       setCheckoutLoading(false);
     }
   };
 
-  const handleMarkPaid = async (e: React.FormEvent) => {
+  const handleMarkPaid = async (e: React.FormEvent, txIdOverride?: string) => {
     e.preventDefault();
+    const txId = txIdOverride ?? transactionId.trim();
+    if (!txId) { setMarkError('Transaction ID is required'); return; }
     setMarkLoading(true);
     setMarkError('');
     try {
       const result = await markPaid({
         clientSubscriptionId: subscriptionId,
-        transactionId: transactionId.trim(),
+        transactionId: txId,
       });
       setMarkResult(result);
 
@@ -224,9 +231,10 @@ export default function EnrollmentPage() {
       {/* ── STEP 2: Checkout ── */}
       {step === 2 && (
         <div className="card">
-          <h2>Step 2 — Get Checkout Token</h2>
+          <h2>Step 2 — Generate Payment Token</h2>
           <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
-            Maps to <code>POST /tenants/client-subscriptions/checkout</code> — returns the Gr4vy embed token and payment amount.
+            Calls <code>POST /payments/token</code> on our backend which uses the Gr4vy SDK directly to generate
+            an embed token for the patient. This token is then used to render the Gr4vy payment UI.
           </p>
 
           <div className="success-box">
@@ -247,12 +255,13 @@ export default function EnrollmentPage() {
 
           <form onSubmit={handleCheckout}>
             <div className="form-group">
-              <label>Coupon Code</label>
-              <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)}
-                placeholder="Optional promotional code" />
+              <label>Payment Amount ($)</label>
+              <input type="number" value={embedAmount} onChange={e => setEmbedAmount(e.target.value)}
+                placeholder="Enter plan price, e.g. 99.00" min="0.01" step="0.01" />
+              <span className="hint">Defaults to $10.00 if left blank. Use the plan price from Step 1.</span>
             </div>
             <button type="submit" className="btn btn-primary" disabled={checkoutLoading} style={{ width: '100%' }}>
-              {checkoutLoading ? 'Getting payment details…' : 'Get Payment Details →'}
+              {checkoutLoading ? 'Generating token…' : 'Generate Payment Token →'}
             </button>
           </form>
           {checkoutError && <div className="error-box">{checkoutError}</div>}
@@ -264,70 +273,58 @@ export default function EnrollmentPage() {
         <div className="card">
           <h2>Step 3 — Payment</h2>
           <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
-            In production, the Gr4vy embed loads using the token below. On payment success, Gr4vy returns a{' '}
-            <code>transactionId</code> which you pass to{' '}
-            <code>POST /tenants/client-subscriptions/mark-paid</code>.
+            Complete payment via the Gr4vy embed below. On success, the subscription is automatically
+            activated via <code>POST /tenants/client-subscriptions/mark-paid</code>.
           </p>
 
-          {/* Checkout summary */}
-          <div style={{ marginBottom: '24px' }}>
-            <div className="summary-row">
-              <span className="summary-label">Plan</span>
-              <span className="summary-value">{checkoutData.plan?.name ?? '—'}</span>
-            </div>
+          <div style={{ marginBottom: '20px' }}>
             <div className="summary-row">
               <span className="summary-label">Amount due</span>
               <span className="summary-value" style={{ fontSize: '1.1rem', color: '#2d3748', fontWeight: 700 }}>
                 {amountDisplay}
               </span>
             </div>
-            {checkoutData.couponApplied && (
-              <div className="summary-row">
-                <span className="summary-label">Coupon discount</span>
-                <span className="summary-value" style={{ color: '#38a169' }}>
-                  −${((checkoutData.couponDiscountAmount ?? 0) / 100).toFixed(2)}
-                </span>
+          </div>
+
+          {!transactionId ? (
+            <>
+              <Gr4vyPayment
+                token={checkoutData.token ?? ''}
+                amount={checkoutData.amount ?? 1000}
+                buyerExternalIdentifier={patientId}
+                onReady={(fn) => setGr4vySubmit(() => fn)}
+                onComplete={(txId) => {
+                  setTransactionId(txId);
+                  const e = { preventDefault: () => {} } as React.FormEvent;
+                  handleMarkPaid(e, txId);
+                }}
+              />
+              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                <button
+                  className="btn btn-success"
+                  style={{ flex: 1 }}
+                  onClick={() => gr4vySubmit?.()}
+                  disabled={markLoading}
+                >
+                  {markLoading ? 'Processing…' : 'Pay Now →'}
+                </button>
               </div>
-            )}
-            <div className="summary-row">
-              <span className="summary-label">Fulfillment</span>
-              <span className="summary-value">
-                Every {checkoutData.plan?.fulfillmentInterval} {checkoutData.plan?.fulfillmentCycle?.toLowerCase()}
-              </span>
+            </>
+          ) : (
+            <div className="success-box">
+              Payment captured — Transaction ID: <span className="mono">{transactionId}</span>
             </div>
-          </div>
+          )}
 
-          {/* Gr4vy embed placeholder */}
-          <div className="embed-placeholder" style={{ marginBottom: '24px' }}>
-            <strong>Gr4vy Payment Embed</strong>
-            <p style={{ fontSize: '13px', marginBottom: '12px' }}>
-              Load <code>https://cdn.gr4vy.app/embed.js</code> and initialise with the token:
-            </p>
-            <code style={{ fontSize: '12px', wordBreak: 'break-all', display: 'block', background: '#edf2f7', padding: '8px', borderRadius: '4px' }}>
-              {checkoutData.token ?? '— token —'}
-            </code>
-          </div>
-
-          <hr className="section-divider" />
-
-          <form onSubmit={handleMarkPaid}>
-            <div className="form-group">
-              <label>Transaction ID * <span className="hint">(returned by Gr4vy on payment success)</span></label>
-              <input type="text" value={transactionId} onChange={e => setTransactionId(e.target.value)}
-                placeholder="Gr4vy transaction ID" required />
-            </div>
-            <button type="submit" className="btn btn-success" disabled={markLoading} style={{ width: '100%' }}>
-              {markLoading ? 'Activating subscription…' : 'Mark as Paid → Activate'}
-            </button>
-          </form>
-          {markError && <div className="error-box">{markError}</div>}
+          {markError && <div className="error-box" style={{ marginTop: '12px' }}>{markError}</div>}
+          {markLoading && <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '12px' }}>Activating subscription…</p>}
 
           <details style={{ marginTop: '16px' }}>
             <summary style={{ cursor: 'pointer', color: '#6b7280', fontSize: '13px' }}>
-              View full checkout response
+              View embed token
             </summary>
             <div className="result-box" style={{ marginTop: '8px' }}>
-              <pre>{JSON.stringify(checkoutData, null, 2)}</pre>
+              <code style={{ fontSize: '11px', wordBreak: 'break-all' }}>{checkoutData.token}</code>
             </div>
           </details>
         </div>
@@ -437,7 +434,7 @@ export default function EnrollmentPage() {
               setSubscriptionId(''); setCreateRaw(null); setCheckoutData(null); setMarkResult(null);
               setSubDetails(null); setOrders([]); setTransactions([]);
               setPatientId(''); setPlanId(''); setEffectiveDate(''); setDuration(''); setClinicId('');
-              setCouponCode(''); setTransactionId('');
+              setEmbedAmount(''); setTransactionId(''); setGr4vySubmit(null);
               setActiveTab('details');
             }}>
               + Enroll Another Patient

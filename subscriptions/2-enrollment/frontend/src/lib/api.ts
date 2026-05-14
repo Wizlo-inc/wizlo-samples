@@ -30,6 +30,14 @@ export function checkout(data: { clientSubscriptionId: string; couponCode?: stri
   });
 }
 
+export function getEmbedToken(data: { amount?: number; currency?: string; buyerExternalIdentifier?: string }) {
+  return call('/payments/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
 export function markPaid(data: { clientSubscriptionId: string; transactionId: string }) {
   return call('/subscriptions/mark-paid', {
     method: 'POST',
