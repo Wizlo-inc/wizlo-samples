@@ -56,7 +56,7 @@ export default function PharmaciesPage() {
         isActive: activeFilter === 'all' ? undefined : activeFilter === 'active',
         isLive:   liveFilter   === 'all' ? undefined : liveFilter   === 'live',
       });
-      setPharmacies(Array.isArray(res) ? res : (res.data ?? []));
+      setPharmacies(res.data ?? []);
       setListFetched(true);
     } catch (err) {
       setListError(err instanceof Error ? err.message : 'Failed to fetch pharmacies');
@@ -86,8 +86,10 @@ export default function PharmaciesPage() {
     setTogglingId(item.id);
     try {
       const updated = await updatePharmacyStatus(item.id, !item.isActive);
-      setPharmacies(prev => prev.map(p => p.id === item.id ? { ...p, isActive: updated.isActive } : p));
-      if (selected?.id === item.id) setSelected(s => s ? { ...s, isActive: updated.isActive } : s);
+      setPharmacies(prev => prev.map(p =>
+        p.id === item.id ? { ...p, isActive: updated.isActive, isLive: updated.isLive } : p,
+      ));
+      if (selected?.id === item.id) setSelected(s => s ? { ...s, isActive: updated.isActive, isLive: updated.isLive } : s);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update status');
     } finally {

@@ -3,9 +3,10 @@ import { Injectable, HttpException } from '@nestjs/common';
 @Injectable()
 export class WizloService {
   private accessToken: string | null = null;
+  private tokenExpiresAt = 0;
 
   private async getToken(): Promise<string> {
-    if (this.accessToken) return this.accessToken;
+    if (this.accessToken && Date.now() < this.tokenExpiresAt) return this.accessToken;
     const res = await fetch(`${process.env.WIZLO_BASE_URL}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -19,8 +20,10 @@ export class WizloService {
       const err = await res.json().catch(() => ({ message: 'Auth failed' }));
       throw new HttpException(err, res.status);
     }
-    const data = await res.json() as { access_token: string };
+    const data = await res.json() as { access_token: string; expires_in: number };
     this.accessToken = data.access_token;
+    // Subtract 60s to refresh before actual expiry
+    this.tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000;
     return this.accessToken!;
   }
 

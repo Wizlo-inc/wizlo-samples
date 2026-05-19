@@ -152,7 +152,15 @@ export class VouchedVerificationService {
 
   async saveIdvResult(dto: VouchedIdvResultDto): Promise<VerificationResponse> {
     const identifier = dto.jobId ?? dto.token;
-    const res = await fetch(`${process.env.VOUCHED_JOB_API_URL}/${identifier}`, {
+    if (!identifier || !/^[A-Za-z0-9_-]+$/.test(identifier)) {
+      throw new BadRequestException('Invalid Vouched job identifier');
+    }
+    const jobApiBaseUrl = process.env.VOUCHED_JOB_API_URL;
+    if (!jobApiBaseUrl) {
+      throw new BadRequestException('Vouched job API URL is not configured for this tenant');
+    }
+    const jobUrl = new URL(`${jobApiBaseUrl.replace(/\/+$/, '')}/${encodeURIComponent(identifier)}`);
+    const res = await fetch(jobUrl.toString(), {
       headers: { 'X-Api-Key': this.privateKey },
     });
     const job = await res.json() as JobApiResponse;

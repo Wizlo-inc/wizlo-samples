@@ -10,6 +10,8 @@ export interface PharmacyBasicInfo {
   address?: string;
   city?: string;
   postalCode?: string;
+  countryId?: string;
+  stateId?: string;
   [key: string]: unknown;
 }
 
@@ -26,11 +28,16 @@ export interface TenantPharmacy {
   [key: string]: unknown;
 }
 
-export interface ListPharmaciesResponse {
-  data: TenantPharmacy[];
+export interface PaginationMeta {
   total?: number;
   page?: number;
   limit?: number;
+  [key: string]: unknown;
+}
+
+export interface ListPharmaciesResponse {
+  data: TenantPharmacy[];
+  meta: PaginationMeta;
 }
 
 export interface ListPharmaciesParams {
@@ -51,7 +58,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return json as T;
 }
 
-export function listPharmacies(params: ListPharmaciesParams = {}): Promise<ListPharmaciesResponse | TenantPharmacy[]> {
+export function listPharmacies(params: ListPharmaciesParams = {}): Promise<ListPharmaciesResponse> {
   const qs = new URLSearchParams();
   if (params.search) qs.set('search', params.search);
   if (params.isActive !== undefined) qs.set('isActive', String(params.isActive));
