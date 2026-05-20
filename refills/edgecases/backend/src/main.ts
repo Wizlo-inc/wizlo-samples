@@ -1,0 +1,23 @@
+/**
+ * Module:    Refills / Edge Cases
+ * Workflow:  Backend bootstrap
+ * File:      main.ts
+ * Author:    Abhay Panchal
+ * Date:      2026-05-19
+ */
+import 'reflect-metadata';
+import * as dotenv from 'dotenv';
+dotenv.config();
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.enableCors();
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  const port = process.env.PORT || 3004;
+  await app.listen(port);
+  console.log(`Refills Edge-Cases backend running on http://localhost:${port}`);
+}
+bootstrap();
