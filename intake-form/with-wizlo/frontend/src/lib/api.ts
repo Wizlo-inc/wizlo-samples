@@ -63,3 +63,56 @@ export async function submitIntake(data: { formId: string; patientId: string; st
   if (!res.ok) throw new Error(JSON.stringify(json));
   return json;
 }
+
+// ── Vouched identity verification ──────────────────────────────────────────
+
+export async function getVouchedPublicConfig(): Promise<{ publicKey: string; callbackURL: string }> {
+  const res = await fetch(`${API_URL}/forms/public/vouched-public-config`);
+  const json = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(json));
+  return json;
+}
+
+export async function checkPriorVerification(data: { patientId: string }): Promise<{ verified: boolean; method?: string; skipped?: boolean }> {
+  const res = await fetch(`${API_URL}/forms/public/check-prior-verification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(json));
+  return json;
+}
+
+export async function vouchedVerify(data: {
+  patientId: string;
+  firstName: string;
+  lastName: string;
+  dob?: string;
+  phone?: string;
+  email?: string;
+}): Promise<{ verified: boolean; method?: string; matchRate?: number; requiresIdv?: boolean }> {
+  const res = await fetch(`${API_URL}/forms/public/vouched-verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(json));
+  return json;
+}
+
+export async function vouchedIdvResult(data: {
+  patientId: string;
+  token: string;
+  jobId?: string;
+}): Promise<{ verified: boolean; method?: string; jobId?: string }> {
+  const res = await fetch(`${API_URL}/forms/public/vouched-idv-result`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(JSON.stringify(json));
+  return json;
+}

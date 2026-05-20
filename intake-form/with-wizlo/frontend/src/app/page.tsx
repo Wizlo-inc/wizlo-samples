@@ -1,9 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   getClients, createPatient, updatePatient,
-  getForms, getFormDetail,
-  submitIntake,
+  getForms, getFormDetail, submitIntake,
+  getVouchedPublicConfig, checkPriorVerification, vouchedVerify, vouchedIdvResult,
 } from '@/lib/api';
 
 const GENDER_OPTIONS = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
@@ -12,7 +12,7 @@ const HEALTH_GOALS = ['Lose weight', 'Gain muscle', 'Improve energy', 'Better sl
 const MEDICAL_CONDITIONS = ['Diabetes', 'Heart disease', 'High blood pressure', 'Thyroid disorder', 'Kidney disease', 'Liver disease', 'Cancer (current/past)', 'None of the above'];
 const SMOKING_OPTIONS = ['Never', 'Former', 'Current'];
 const ALCOHOL_OPTIONS = ['Never', 'Rarely', 'Occasionally', 'Regularly'];
-const STEP_LABELS = ['Patient', 'Select Form', 'Health Info', 'Review'];
+const STEP_LABELS = ['Patient', 'Verify Identity', 'Select Form', 'Health Info', 'Review'];
 
 interface Patient { id: string; firstName: string; lastName: string; email: string; }
 interface WizloForm { id: string; name: string; description?: string; status?: string; }
@@ -24,6 +24,20 @@ interface HealthData {
   allergies: string; smokingStatus: string; alcoholUse: string;
 }
 
+type VerifyStatus = 'idle' | 'checking' | 'verified' | 'requiresIdv' | 'idvDone';
+
+const METHOD_LABELS: Record<string, string> = {
+  prior: 'Prior Verification (already on file)',
+  crosscheck: 'CrossCheck (name + contact)',
+  dob: 'Date of Birth Match',
+  idv: 'ID + Selfie Verification',
+};
+
+function resolvePatientId(patient: Patient): string | undefined {
+  const raw = patient as unknown as Record<string, unknown>;
+  return (raw?.user_id || raw?.id || raw?.clientId || raw?.patientId) as string | undefined;
+}
+
 export default function IntakeFormPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -31,7 +45,7 @@ export default function IntakeFormPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitResult, setSubmitResult] = useState<unknown>(null);
 
-  // Step 1 — Patient
+  // ── Step 1 — Patient ──────────────────────────────────────────────────────
   const [searchEmail, setSearchEmail] = useState('');
   const [searchDone, setSearchDone] = useState(false);
   const [foundPatients, setFoundPatients] = useState<Patient[]>([]);
@@ -39,13 +53,20 @@ export default function IntakeFormPage() {
   const [patientMode, setPatientMode] = useState<'idle' | 'create' | 'edit'>('idle');
   const [patientForm, setPatientForm] = useState({ firstName: '', lastName: '', email: '' });
 
-  // Step 2 — Form selection
+  // ── Step 2 — Verify Identity ──────────────────────────────────────────────
+  const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>('idle');
+  const [verifyMethod, setVerifyMethod] = useState('');
+  const [verifyDob, setVerifyDob] = useState('');
+  const [verifyPhone, setVerifyPhone] = useState('');
+  const [vouchedPublicKey, setVouchedPublicKey] = useState('');
+
+  // ── Step 3 — Form selection ───────────────────────────────────────────────
   const [forms, setForms] = useState<WizloForm[]>([]);
   const [formsLoaded, setFormsLoaded] = useState(false);
   const [selectedForm, setSelectedForm] = useState<WizloForm | null>(null);
   const [formDetail, setFormDetail] = useState<unknown>(null);
 
-  // Step 3 — Health info
+  // ── Step 4 — Health info ──────────────────────────────────────────────────
   const [hd, setHd] = useState<HealthData>({
     fullName: '', dateOfBirth: '', gender: '',
     heightFt: '', heightIn: '0', weightLbs: '',
@@ -61,6 +82,65 @@ export default function IntakeFormPage() {
   const toggleH = (key: 'healthGoals' | 'medicalConditions', val: string) =>
     setHd(p => ({ ...p, [key]: p[key].includes(val) ? p[key].filter(x => x !== val) : [...p[key], val] }));
 
+  // ── Vouched IDV widget — load Vouched JS SDK when IDV is required ─────────
+  useEffect(() => {
+    if (verifyStatus !== 'requiresIdv' || !vouchedPublicKey || !selectedPatient) return;
+
+    const patientId = resolvePatientId(selectedPatient) ?? '';
+
+    const handleIdvDone = async (token: string) => {
+      try {
+        const result = await vouchedIdvResult({ patientId, token });
+        setVerifyMethod('idv');
+        setVerifyStatus(result.verified ? 'verified' : 'idvDone');
+        if (!result.verified) setError('ID verification was not successful. Please try again.');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save verification result.');
+      }
+    };
+
+    let script: HTMLScriptElement | null = null;
+
+    const initWidget = () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const vouched = (window as any).Vouched({
+          appId: vouchedPublicKey,
+          sandbox: false,
+          // callbackURL is for server-side webhooks — not needed here since we use onDone
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onDone: (job: any) => { void handleIdvDone(job?.token ?? job?.id ?? ''); },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onError: (err: any) => {
+            const msg = err?.message ?? err?.type ?? JSON.stringify(err) ?? 'Unknown error';
+            console.error('[Vouched widget error]', err);
+            setError(`Vouched error: ${msg}`);
+          },
+        });
+        vouched.mount('#vouched-element');
+      } catch (e) {
+        console.error('[Vouched init error]', e);
+        setError('Failed to initialize the verification widget.');
+      }
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).Vouched) {
+      initWidget();
+    } else {
+      script = document.createElement('script');
+      script.src = 'https://static.vouched.id/widget/vouched-2.0.0.js';
+      script.onload = initWidget;
+      script.onerror = () => setError('Failed to load the verification widget. Check your network.');
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      if (script && document.head.contains(script)) document.head.removeChild(script);
+    };
+  }, [verifyStatus, vouchedPublicKey, selectedPatient]);
+
+  // ── Step 1 handlers ───────────────────────────────────────────────────────
   const handleSearch = async () => {
     if (!searchEmail.trim()) { setError('Enter an email to search.'); return; }
     setLoading(true); setError(''); setSearchDone(false);
@@ -74,9 +154,7 @@ export default function IntakeFormPage() {
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Search failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleSelectPatient = (p: Patient) => {
@@ -98,9 +176,7 @@ export default function IntakeFormPage() {
       setHd(prev => ({ ...prev, fullName: `${p.firstName} ${p.lastName}` }));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Create patient failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleUpdatePatient = async () => {
@@ -114,11 +190,55 @@ export default function IntakeFormPage() {
       setHd(prev => ({ ...prev, fullName: `${updated.firstName} ${updated.lastName}` }));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Update patient failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
+  // ── Step 2 handler ────────────────────────────────────────────────────────
+  const handleVerifyIdentity = async () => {
+    if (!selectedPatient) return;
+    if (!verifyDob) { setError('Date of Birth is required for verification.'); return; }
+    const patientId = resolvePatientId(selectedPatient);
+    if (!patientId) { setError('Patient ID could not be resolved. Please re-select the patient.'); return; }
+
+    setLoading(true); setError(''); setVerifyStatus('checking');
+    try {
+      // 1. Check if already verified on Wizlo
+      const prior = await checkPriorVerification({ patientId });
+      if (prior.verified) {
+        setVerifyStatus('verified');
+        setVerifyMethod(prior.method ?? 'prior');
+        return;
+      }
+
+      // 2. CrossCheck → DOB fallback (backend handles both)
+      const result = await vouchedVerify({
+        patientId,
+        firstName: selectedPatient.firstName,
+        lastName: selectedPatient.lastName,
+        dob: verifyDob,
+        phone: verifyPhone || undefined,
+        email: selectedPatient.email,
+      });
+
+      if (result.verified) {
+        setVerifyStatus('verified');
+        setVerifyMethod(result.method ?? 'api');
+      } else if (result.requiresIdv) {
+        // 3. API checks failed — load the Vouched IDV widget
+        const config = await getVouchedPublicConfig();
+        setVouchedPublicKey(config.publicKey);
+        setVerifyStatus('requiresIdv');
+      } else {
+        setVerifyStatus('idle');
+        setError('Verification did not pass. Please check your information and try again.');
+      }
+    } catch (err: unknown) {
+      setVerifyStatus('idle');
+      setError(err instanceof Error ? err.message : 'Verification failed');
+    } finally { setLoading(false); }
+  };
+
+  // ── Step 3 handler ────────────────────────────────────────────────────────
   const loadForms = async () => {
     if (formsLoaded) return;
     setLoading(true); setError('');
@@ -128,9 +248,7 @@ export default function IntakeFormPage() {
       setFormsLoaded(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load forms');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleSelectForm = async (form: WizloForm) => {
@@ -141,21 +259,23 @@ export default function IntakeFormPage() {
       setFormDetail(detail);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load form detail');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
+  // ── Navigation ────────────────────────────────────────────────────────────
   const next = async () => {
     setError('');
     if (step === 1) {
       if (!selectedPatient) { setError('Please select or create a patient first.'); return; }
       setStep(2);
-      await loadForms();
     } else if (step === 2) {
-      if (!selectedForm) { setError('Please select a form.'); return; }
+      if (verifyStatus !== 'verified') { setError('Please complete identity verification before proceeding.'); return; }
       setStep(3);
+      await loadForms();
     } else if (step === 3) {
+      if (!selectedForm) { setError('Please select a form.'); return; }
+      setStep(4);
+    } else if (step === 4) {
       if (!hd.fullName || !hd.dateOfBirth || !hd.gender) {
         setError('Name, Date of Birth, and Gender are required.'); return;
       }
@@ -165,31 +285,26 @@ export default function IntakeFormPage() {
       if (!hd.smokingStatus || !hd.alcoholUse) {
         setError('Smoking and Alcohol status are required.'); return;
       }
-      setStep(4);
+      setStep(5);
     }
   };
 
   const back = () => { setError(''); setStep(s => s - 1); };
 
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!agreedTerms || !agreedTelehealth) {
       setError('Please agree to both Terms of Service and Telehealth consent.'); return;
     }
-
-    // Extract patient ID — Wizlo returns it as `user_id`
-    const raw = selectedPatient as unknown as Record<string, unknown>;
-    const patientId = (raw?.user_id || raw?.id || raw?.clientId || raw?.patientId) as string | undefined;
-    console.log('[handleSubmit] selectedPatient:', selectedPatient);
-    console.log('[handleSubmit] resolved patientId:', patientId);
-
+    const patientId = resolvePatientId(selectedPatient!);
     if (!patientId) {
+      const raw = selectedPatient as unknown as Record<string, unknown>;
       setError(
-        `Patient ID not found. Available fields on patient object: [${Object.keys(raw ?? {}).join(', ')}]. ` +
-        'Please check the browser console and share this with your developer.'
+        `Patient ID not found. Fields available: [${Object.keys(raw ?? {}).join(', ')}]. ` +
+        'Please check the console and share with your developer.'
       );
       return;
     }
-
     setLoading(true); setError('');
     try {
       const structure = {
@@ -211,20 +326,15 @@ export default function IntakeFormPage() {
           ],
         }],
       };
-      const result = await submitIntake({
-        formId: selectedForm!.id,
-        patientId,
-        structure,
-      });
+      const result = await submitIntake({ formId: selectedForm!.id, patientId, structure });
       setSubmitResult(result);
       setSubmitted(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Submission failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
+  // ── Success screen ─────────────────────────────────────────────────────────
   if (submitted) {
     return (
       <div className="container">
@@ -235,6 +345,7 @@ export default function IntakeFormPage() {
           <div className="result-box">
             {[
               ['Patient', `${selectedPatient?.firstName} ${selectedPatient?.lastName} (${selectedPatient?.email})`],
+              ['Identity Verified Via', METHOD_LABELS[verifyMethod] ?? verifyMethod],
               ['Form', selectedForm?.name ?? ''],
               ['Name', hd.fullName], ['DOB', hd.dateOfBirth], ['Gender', hd.gender],
               ['Height', `${hd.heightFt}ft ${hd.heightIn}in`], ['Weight', `${hd.weightLbs} lbs`],
@@ -254,11 +365,13 @@ export default function IntakeFormPage() {
     );
   }
 
+  // ── Main form ──────────────────────────────────────────────────────────────
   return (
     <div className="container">
       <h1>Patient Intake Form</h1>
       <p className="subtitle">Complete all steps to submit your health information to Wizlo.</p>
 
+      {/* Step indicator */}
       <div className="steps">
         {STEP_LABELS.flatMap((label, idx) => {
           const items = [
@@ -357,9 +470,7 @@ export default function IntakeFormPage() {
                   {loading ? 'Saving...' : patientMode === 'create' ? 'Create Patient' : 'Update Patient'}
                 </button>
                 {patientMode === 'edit' && (
-                  <button type="button" className="btn btn-secondary" onClick={() => setPatientMode('idle')}>
-                    Cancel
-                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setPatientMode('idle')}>Cancel</button>
                 )}
               </div>
             </div>
@@ -373,8 +484,84 @@ export default function IntakeFormPage() {
         </div>
       )}
 
-      {/* STEP 2 — SELECT FORM */}
+      {/* STEP 2 — VERIFY IDENTITY */}
       {step === 2 && (
+        <div className="card">
+          <h2>Verify Identity</h2>
+          <p style={{ color: '#6b7280', marginBottom: 20, fontSize: 14 }}>
+            We verify your identity before proceeding. We check your information against national databases.
+            If that does not pass, we will ask you to take a photo of your ID.
+          </p>
+
+          {/* Already verified */}
+          {verifyStatus === 'verified' && (
+            <div className="success-box">
+              Identity verified via <strong>{METHOD_LABELS[verifyMethod] ?? verifyMethod}</strong>. You may proceed.
+            </div>
+          )}
+
+          {/* IDV widget */}
+          {verifyStatus === 'requiresIdv' && (
+            <>
+              <div style={{ padding: '12px 16px', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 6, marginBottom: 16, fontSize: 14, color: '#92400e' }}>
+                Automatic verification did not pass. Please verify your identity using the widget below —
+                you will need your government-issued ID and camera access.
+              </div>
+              <div id="vouched-element" style={{ minHeight: 400, border: '1px solid #e2e8f0', borderRadius: 6 }} />
+            </>
+          )}
+
+          {/* IDV done but not verified */}
+          {verifyStatus === 'idvDone' && (
+            <div className="error-box" style={{ marginTop: 0, marginBottom: 16 }}>
+              ID verification was not successful. Please try again or contact support.
+            </div>
+          )}
+
+          {/* Input form — shown when idle, checking, or after failed idvDone */}
+          {(verifyStatus === 'idle' || verifyStatus === 'checking' || verifyStatus === 'idvDone') && (
+            <>
+              <div style={{ background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '12px 16px', marginBottom: 20, fontSize: 14 }}>
+                Verifying for: <strong>{selectedPatient?.firstName} {selectedPatient?.lastName}</strong> ({selectedPatient?.email})
+              </div>
+
+              <div className="form-group">
+                <label>Date of Birth *</label>
+                <input
+                  type="date"
+                  value={verifyDob}
+                  onChange={e => setVerifyDob(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+                <p className="hint">Used for CrossCheck and DOB verification</p>
+              </div>
+
+              <div className="form-group">
+                <label>Phone Number</label>
+                <input
+                  type="text"
+                  value={verifyPhone}
+                  onChange={e => setVerifyPhone(e.target.value)}
+                  placeholder="5551234567"
+                />
+                <p className="hint">Optional — improves CrossCheck accuracy</p>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleVerifyIdentity}
+                disabled={loading || !verifyDob}
+              >
+                {loading && verifyStatus === 'checking' ? 'Verifying...' : 'Verify Identity'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* STEP 3 — SELECT FORM */}
+      {step === 3 && (
         <div className="card">
           <h2>Select Intake Form</h2>
           {loading && <p style={{ color: '#6b7280' }}>Loading forms...</p>}
@@ -414,8 +601,8 @@ export default function IntakeFormPage() {
         </div>
       )}
 
-      {/* STEP 3 — HEALTH INFO */}
-      {step === 3 && (
+      {/* STEP 4 — HEALTH INFO */}
+      {step === 4 && (
         <div className="card">
           <h2>Health Information</h2>
 
@@ -511,14 +698,14 @@ export default function IntakeFormPage() {
         </div>
       )}
 
-      {/* STEP 4 — REVIEW & SUBMIT */}
-      {step === 4 && (
+      {/* STEP 5 — REVIEW & SUBMIT */}
+      {step === 5 && (
         <div className="card">
           <h2>Review & Confirm</h2>
           <div className="result-box">
             {[
               ['Patient', `${selectedPatient?.firstName} ${selectedPatient?.lastName} (${selectedPatient?.email})`],
-              ['Patient ID', (selectedPatient as unknown as Record<string, unknown>)?.id as string || (selectedPatient as unknown as Record<string, unknown>)?.clientId as string || (selectedPatient as unknown as Record<string, unknown>)?.patientId as string || '⚠ not found — see console'],
+              ['Identity Verified Via', METHOD_LABELS[verifyMethod] ?? verifyMethod],
               ['Form', selectedForm?.name ?? ''],
               ['Name', hd.fullName], ['DOB', hd.dateOfBirth], ['Gender', hd.gender],
               ['Height', `${hd.heightFt}ft ${hd.heightIn}in`], ['Weight', `${hd.weightLbs} lbs`],
@@ -546,8 +733,10 @@ export default function IntakeFormPage() {
       {error && <div className="error-box">{error}</div>}
 
       <div className="nav-buttons">
-        {step > 1 && <button type="button" className="btn btn-secondary" onClick={back}>Back</button>}
-        {step < 4
+        {step > 1 && (
+          <button type="button" className="btn btn-secondary" onClick={back}>Back</button>
+        )}
+        {step < 5
           ? <button type="button" className="btn btn-primary" onClick={next} disabled={loading} style={{ marginLeft: 'auto' }}>
               {loading ? 'Loading...' : 'Next'}
             </button>

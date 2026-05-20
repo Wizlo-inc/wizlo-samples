@@ -1,0 +1,234 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f0f4f8;
+  color: #1a202c;
+  line-height: 1.5;
+}
+
+/* ── Layout ── */
+.page { max-width: 900px; margin: 0 auto; padding: 40px 24px 60px; }
+
+.page-header { margin-bottom: 32px; }
+.page-header h1 { font-size: 1.75rem; font-weight: 700; color: #1a202c; margin-bottom: 4px; }
+.page-header p  { color: #718096; font-size: 0.9375rem; }
+
+/* ── Card ── */
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 20px;
+}
+
+/* ── Filter bar ── */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.filter-group { display: flex; flex-direction: column; gap: 5px; }
+.filter-group label { font-size: 0.75rem; font-weight: 600; color: #718096; text-transform: uppercase; letter-spacing: 0.04em; }
+.filter-group.grow { flex: 1; min-width: 180px; }
+
+input[type="text"], select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #1a202c;
+  background: #f7fafc;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+input[type="text"]:focus, select:focus {
+  border-color: #4299e1;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(66,153,225,0.12);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-primary   { background: #4299e1; color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #3182ce; }
+
+.btn-outline {
+  background: transparent;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+}
+.btn-outline:hover:not(:disabled) { background: #f7fafc; border-color: #cbd5e0; }
+
+.btn-danger    { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+.btn-danger:hover:not(:disabled) { background: #fed7d7; }
+
+.btn-success   { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+.btn-success:hover:not(:disabled) { background: #c6f6d5; }
+
+.btn-sm { height: 32px; padding: 0 14px; font-size: 0.8125rem; border-radius: 6px; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.badge-active  { background: #f0fff4; color: #276749; }
+.badge-active::before  { background: #48bb78; }
+.badge-inactive{ background: #f7fafc; color: #a0aec0; }
+.badge-inactive::before{ background: #cbd5e0; }
+.badge-live    { background: #ebf8ff; color: #2b6cb0; }
+.badge-live::before    { background: #4299e1; }
+.badge-offline { background: #fffaf0; color: #c05621; }
+.badge-offline::before { background: #ed8936; }
+
+/* ── Pharmacy list ── */
+.pharmacy-list { display: flex; flex-direction: column; gap: 1px; margin-top: 20px; }
+
+.pharmacy-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.pharmacy-row:hover { background: #f7fbff; border-color: #bee3f8; }
+.pharmacy-row.selected { background: #ebf8ff; border-color: #90cdf4; }
+
+.pharmacy-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.pharmacy-info { flex: 1; min-width: 0; }
+.pharmacy-name { font-weight: 600; font-size: 0.9375rem; color: #1a202c; }
+.pharmacy-meta { font-size: 0.8125rem; color: #718096; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.pharmacy-badges { display: flex; gap: 6px; flex-shrink: 0; }
+
+.pharmacy-action { flex-shrink: 0; }
+
+/* ── Detail panel ── */
+.detail-panel {
+  animation: fadeSlide 0.18s ease;
+  border-left: 3px solid #4299e1;
+}
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.detail-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.detail-name { font-size: 1.25rem; font-weight: 700; color: #1a202c; margin-bottom: 6px; }
+.detail-badges { display: flex; gap: 6px; }
+.detail-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Detail grid ── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  background: #f7fafc;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.detail-field { display: flex; flex-direction: column; gap: 3px; }
+.detail-field .label { font-size: 0.7rem; font-weight: 700; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.06em; }
+.detail-field .value { font-size: 0.9rem; color: #2d3748; word-break: break-all; }
+
+/* ── Raw JSON ── */
+.raw-toggle {
+  font-size: 0.8125rem;
+  color: #4299e1;
+  cursor: pointer;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 10px;
+}
+.raw-toggle:hover { text-decoration: underline; }
+.result-box {
+  background: #1a202c;
+  border-radius: 8px;
+  padding: 16px;
+  overflow: auto;
+  max-height: 320px;
+}
+.result-box pre { color: #a8ff78; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; }
+
+/* ── States ── */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #a0aec0;
+}
+.empty-state .icon { font-size: 2.5rem; margin-bottom: 8px; }
+.empty-state p { font-size: 0.9rem; }
+
+.error-box {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  color: #c53030;
+  font-size: 0.875rem;
+  margin-top: 16px;
+}
+
+.divider { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
