@@ -140,10 +140,21 @@ export interface SubmitRxResponse {
     encounterStatus: string | null;
     items: Array<{
       orderItemId: string;
+      productName?: string;
       success: boolean;
       skipped?: boolean;
       error?: string;
-      data?: unknown;
+      data?: {
+        apiOrderId?: string;
+        pharmacyName?: string;
+        pharmacyProvider?: string;
+        submissionType?: string;
+        submittedAt?: string;
+        rxStatus?: string;
+        encounterId?: string;
+        encounterStatus?: string;
+        message?: string;
+      };
     }>;
   };
 }
