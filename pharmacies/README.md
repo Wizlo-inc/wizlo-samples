@@ -127,6 +127,39 @@ Content-Type: application/json
 { "isLive": true }
 ```
 
+## Using the UI
+
+Once both servers are running, open [http://localhost:3017](http://localhost:3017) in your browser.
+
+![Pharmacy Management UI](screenshots/pharmacy.png)
+
+### Step 1 — Search and filter pharmacies
+
+In the **List Pharmacies** section at the top:
+
+1. *(Optional)* Type a pharmacy name in the **Search by Name** field (e.g. `Greenwich`).
+2. *(Optional)* Use the **Active Status** dropdown to filter by `Active`, `Inactive`, or `All`.
+3. *(Optional)* Use the **Live Status** dropdown to filter by `Live`, `Offline`, or `All`.
+4. Click **Fetch Pharmacies** — matching pharmacies appear as cards below the filters.
+
+### Step 2 — View pharmacy details
+
+1. Locate the pharmacy card in the results list. Each card shows the pharmacy name, email, phone number, and its current **Active** / **Live** status badges.
+2. Click the card (or the expand toggle) to reveal the full details panel beneath it.
+3. The details panel displays:
+   - **Assignment ID** and **Pharmacy ID**
+   - **Email**, **Mobile**, and **Fax**
+   - **Address**
+   - A collapsible **raw JSON response** (click *Hide raw response* / *Show raw response* to toggle).
+
+### Step 3 — Change active status
+
+In the open details panel, click **Deactivate** (or **Activate** if the pharmacy is currently inactive) to toggle the pharmacy's active status. The status badge on the card updates immediately without a page reload.
+
+### Step 4 — Change live status
+
+In the same details panel, click **Set Offline** (or **Set Live** if the pharmacy is currently offline) to toggle whether the pharmacy is live. The status badge updates in place.
+
 ## Request Flow
 
 ```
@@ -139,7 +172,7 @@ Browser → Next.js (3017) → NestJS (3007) → Wizlo API
 1. User fills search/filter fields and clicks **Fetch Pharmacies**
 2. Frontend calls `GET /pharmacies` on the NestJS backend
 3. NestJS obtains an OAuth2 Bearer token (cached) and forwards the request to `GET /tenants/pharmacies` on the Wizlo API
-4. Results are returned and displayed in a table
-5. Clicking **Details** on a row calls `GET /pharmacies/:id` and shows the full pharmacy object
-6. Clicking **Activate / Deactivate** calls `PATCH /pharmacies/:id/status` and updates the row in place
-7. Clicking **Set Live / Set Offline** calls `PATCH /pharmacies/:id/live` and updates the row in place
+4. Results are returned and displayed as expandable cards
+5. Expanding a card calls `GET /pharmacies/:id` and shows the full pharmacy details
+6. Clicking **Activate / Deactivate** calls `PATCH /pharmacies/:id/status` and updates the card in place
+7. Clicking **Set Live / Set Offline** calls `PATCH /pharmacies/:id/live` and updates the card in place
