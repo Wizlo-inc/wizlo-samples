@@ -2,7 +2,7 @@
  * Module:    Refills / Edge Cases
  * Workflow:  Frontend → backend API client
  * File:      lib/api.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-19
  */
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3004';

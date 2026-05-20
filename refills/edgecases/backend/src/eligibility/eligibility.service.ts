@@ -2,7 +2,7 @@
  * Module:    Refills / Edge Cases
  * Workflow:  Edge-case detection
  * File:      eligibility/eligibility.service.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-19
  */
 import { Injectable } from '@nestjs/common';

@@ -2,7 +2,7 @@
  * Module:    Refills / Edge Cases
  * Workflow:  Backend root module
  * File:      app.module.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-19
  *
  * Mirrors the eligibility + refill-orders surface from refills/backend, because

@@ -2,7 +2,7 @@
  * Module:    Refills / Edge Cases
  * Workflow:  Failure-mode handling
  * File:      app/page.tsx
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-19
  *
  * Two diagnostic flows you must handle in production:

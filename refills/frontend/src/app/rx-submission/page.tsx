@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  3 — Rx submission
  * File:      app/rx-submission/page.tsx
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-19
  *
  * 4-checkpoint flow (matches the subscriptions/2-enrollment stepper pattern):
@@ -269,21 +269,21 @@ function RxSubmissionForm() {
         <div className="card">
           <h2>Prescription Transmitted</h2>
           <div className="success-box">
-            ✓ Rx transmitted to{' '}
-            <strong>{rxResult.data?.pharmacyName ?? 'pharmacy'}</strong> via{' '}
-            <code>{rxResult.data?.pharmacyProvider}</code>. rxStatus:{' '}
-            <span className="badge badge-green">{rxResult.data?.rxStatus}</span>
+            ✓ {rxResult.message ?? 'Rx submission complete.'}{' '}
+            <span className="badge badge-green">
+              {rxResult.data?.successCount ?? 0}/{rxResult.data?.totalItems ?? 0} succeeded
+            </span>
           </div>
 
-          {rxResult.data?.apiOrderId && (
+          {rxResult.data?.orderId && (
             <p style={{ marginTop: 12, fontSize: 14 }}>
-              <strong>Pharmacy order ID:</strong>{' '}
-              <span className="mono">{rxResult.data.apiOrderId}</span>
+              <strong>Order ID:</strong>{' '}
+              <span className="mono">{rxResult.data.orderId}</span>
             </p>
           )}
-          {rxResult.data?.submittedAt && (
+          {rxResult.data?.encounterStatus && (
             <p style={{ fontSize: 14, color: '#4a5568' }}>
-              Submitted at {new Date(rxResult.data.submittedAt).toLocaleString()}
+              Encounter status: <code>{rxResult.data.encounterStatus}</code>
             </p>
           )}
 

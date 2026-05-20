@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  Frontend → backend API client
  * File:      lib/api.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-18
  *
  * Thin fetch wrapper that talks to the refills NestJS backend. The backend
@@ -133,11 +133,17 @@ export interface MarkPaidResponse {
 export interface SubmitRxResponse {
   message: string;
   data: {
-    apiOrderId?: string;
-    pharmacyName?: string;
-    pharmacyProvider?: string;
-    submissionType?: string;
-    submittedAt?: string;
-    rxStatus?: string;
+    orderId: string;
+    totalItems: number;
+    successCount: number;
+    failureCount: number;
+    encounterStatus: string | null;
+    items: Array<{
+      orderItemId: string;
+      success: boolean;
+      skipped?: boolean;
+      error?: string;
+      data?: unknown;
+    }>;
   };
 }

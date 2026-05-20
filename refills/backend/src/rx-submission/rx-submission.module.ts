@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  3 — Rx submission
  * File:      rx-submission/rx-submission.module.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-18
  */
 import { Module } from '@nestjs/common';

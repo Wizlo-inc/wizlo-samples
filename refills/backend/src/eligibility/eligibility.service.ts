@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  1 — Eligibility check
  * File:      eligibility/eligibility.service.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-18
  *
  * Wraps the two read-only refill eligibility endpoints:

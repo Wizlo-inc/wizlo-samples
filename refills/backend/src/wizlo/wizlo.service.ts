@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  Shared OAuth + HTTP helper
  * File:      wizlo/wizlo.service.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-18
  *
  * Singleton WizloService: fetches a client_credentials token on first request,

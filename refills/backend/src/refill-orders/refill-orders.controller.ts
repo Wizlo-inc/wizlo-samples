@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  2 — Create refill order
  * File:      refill-orders/refill-orders.controller.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-18
  */
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';

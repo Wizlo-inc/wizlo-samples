@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  Frontend root layout
  * File:      app/layout.tsx
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-18
  */
 import type { Metadata } from 'next';

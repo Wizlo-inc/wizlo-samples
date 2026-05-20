@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  Frontend — overview
  * File:      app/page.tsx
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-18
  */
 import Link from 'next/link';

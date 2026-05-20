@@ -2,7 +2,7 @@
  * Module:    Refills
  * Workflow:  2 — Create refill order
  * File:      refill-orders/refill-orders.service.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-18
  *
  * Wraps POST /tenants/refills/staff/create — the only write endpoint in the

@@ -2,7 +2,7 @@
  * Module:    Refills / Edge Cases
  * Workflow:  Reproduce REFILL_NOT_ELIGIBLE / bypassDaysOfSupply
  * File:      refill-orders/dto/create-refill.dto.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-19
  */
 import { IsArray, IsBoolean, IsOptional, IsString, ArrayNotEmpty } from 'class-validator';

@@ -2,7 +2,7 @@
  * Module:    Refills / Edge Cases
  * Workflow:  Shared OAuth + HTTP helper
  * File:      wizlo/wizlo.service.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-19
  */
 import { Injectable, HttpException } from '@nestjs/common';

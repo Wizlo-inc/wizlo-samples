@@ -2,7 +2,7 @@
  * Module:    Refills / Edge Cases
  * Workflow:  Edge-case detection
  * File:      eligibility/eligibility.controller.ts
- * Author:    Abhay Panchal <abhay.panchal@techdome.net.in>
+ * Author:    Abhay Panchal
  * Date:      2026-05-19
  */
 import { Controller, Get, Param, Query, BadRequestException } from '@nestjs/common';
