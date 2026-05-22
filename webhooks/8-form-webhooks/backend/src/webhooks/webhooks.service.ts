@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { WizloService } from '../wizlo/wizlo.service';
 import * as crypto from 'crypto';
 
@@ -26,7 +26,7 @@ export class WebhooksService {
     if (secret && headers[sigHeader]) {
       if (!this.verifySignature(JSON.stringify(body), headers[sigHeader], secret)) {
         console.warn('[Webhook] Invalid signature — rejecting event');
-        return { status: 'invalid_signature' };
+        throw new UnauthorizedException('invalid_signature');
       }
     }
     const rawEvent: string = body.event || '';
@@ -76,10 +76,14 @@ export class WebhooksService {
 
   private verifySignature(payload: string, signature: string, secret: string): boolean {
     try {
+      const rawSig = signature.includes('=') ? signature.split('=').slice(1).join('=') : signature;
       const hmac = crypto.createHmac('sha256', secret);
       hmac.update(payload);
       const expected = hmac.digest('hex');
-      return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
+      const sigBuffer = Buffer.from(rawSig, 'hex');
+      const expectedBuffer = Buffer.from(expected, 'hex');
+      if (sigBuffer.length !== expectedBuffer.length) return false;
+      return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
     } catch {
       return false;
     }
