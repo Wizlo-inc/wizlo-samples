@@ -1,0 +1,19 @@
+{
+  "name": "notification-webhook-frontend",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev -p 3058",
+    "build": "next build",
+    "start": "next start -p 3058"
+  },
+  "dependencies": {
+    "next": "14.2.0",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@types/node": "25.9.1",
+    "@types/react": "19.2.15",
+    "typescript": "6.0.3"
+  }
+}
