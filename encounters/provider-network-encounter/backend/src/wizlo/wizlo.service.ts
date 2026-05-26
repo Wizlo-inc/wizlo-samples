@@ -3,32 +3,26 @@ import { Injectable, HttpException } from '@nestjs/common';
 @Injectable()
 export class WizloService {
   private accessToken: string | null = null;
+  private tokenExpiresAt = 0;
 
   private async getToken(): Promise<string> {
-    if (this.accessToken) return this.accessToken;
-    const tokenUrl = `${process.env.WIZLO_BASE_URL}/oauth/token`;
-    console.log('[WizloService] fetching token from:', tokenUrl);
-    let res: Response;
-    try {
-      res = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          grant_type: 'client_credentials',
-          client_id: process.env.WIZLO_CLIENT_ID,
-          client_secret: process.env.WIZLO_CLIENT_SECRET,
-        }),
-      });
-    } catch (err: any) {
-      console.error('[WizloService] fetch network error:', err?.message, '| cause:', err?.cause);
-      throw err;
-    }
+    if (this.accessToken && Date.now() < this.tokenExpiresAt) return this.accessToken;
+    const res = await fetch(`${process.env.WIZLO_BASE_URL}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grant_type: 'client_credentials',
+        client_id: process.env.WIZLO_CLIENT_ID,
+        client_secret: process.env.WIZLO_CLIENT_SECRET,
+      }),
+    });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: 'Auth failed' }));
       throw new HttpException(err, res.status);
     }
-    const data = await res.json() as { access_token: string };
+    const data = await res.json() as { access_token: string; expires_in?: number };
     this.accessToken = data.access_token;
+    this.tokenExpiresAt = Date.now() + ((data.expires_in ?? 3600) - 60) * 1000;
     return this.accessToken!;
   }
 
@@ -43,6 +37,10 @@ export class WizloService {
       },
     });
     if (!res.ok) {
+      if (res.status === 401) {
+        this.accessToken = null;
+        this.tokenExpiresAt = 0;
+      }
       const err = await res.json().catch(() => ({ message: 'Request failed' }));
       throw new HttpException(err, res.status);
     }

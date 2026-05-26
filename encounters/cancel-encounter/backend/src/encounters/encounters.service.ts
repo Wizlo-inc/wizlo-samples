@@ -18,7 +18,7 @@ export class EncountersService {
     return { status: data.encounter_status, encounterId: data.encounter_id };
   }
 
-  async cancelEncounter(encounterId: number) {
+  async cancelEncounter(encounterId: number): Promise<unknown> {
     return this.wizlo.request(`/encounters/${encounterId}/cancel`, { method: 'POST' });
   }
 }
