@@ -8,18 +8,25 @@ For the published customer-facing version, see the [Subscription & Refill Lifecy
 
 ## TL;DR
 
-After enrollment and first payment, a daily cron job at **11:00 UTC** handles everything automatically:
+After enrollment and first payment, three daily cron jobs handle everything automatically:
 
 ```
-For each subscription where nextFulfillmentDate <= now:
-   ├── Refills remaining + Rx valid       → create a REFILL order
-   ├── Refills exhausted, within duration → create a NEW ENCOUNTER
-   ├── Refills exhausted, duration exceeded → EXPIRE the subscription
-   └── Rx expiring in 10 / 7 / 3 days     → send REASSESSMENT form
+09:00 UTC — Reminders cron:
+   └── Unpaid cycle order exists → send payment-link reminder to patient
 
-Then for the resulting order:
-   ├── autopayEnabled        → charge saved card
-   └── autopay disabled/fail → send payment link (3-day expiry)
+10:00 UTC — Payment retry cron:
+   └── nextPaymentRetryDate <= now → re-attempt autopay charge
+
+11:00 UTC — Fulfillment cron:
+   For each subscription where nextFulfillmentDate <= now:
+      ├── Refills remaining + Rx valid       → create a REFILL order
+      ├── Refills exhausted, within duration → create a NEW ENCOUNTER
+      ├── Refills exhausted, duration exceeded → EXPIRE the subscription
+      └── Rx expiring in 10 / 7 / 3 days     → send REASSESSMENT form
+
+   Then for the resulting order:
+      ├── autopayEnabled        → charge saved card
+      └── autopay disabled/fail → send payment link (3-day expiry)
 ```
 
 The patient does nothing unless their prescription needs a reassessment, in which case they fill out a form.
@@ -39,7 +46,7 @@ The `ClientSubscriptionStatus` enum has **10 states** (see `api/prisma/clinic/sc
 | `ACTIVE` | Healthy, in regular fulfillment cycle | All onboarding done | Pause / cancel / expire / payment failure / reassessment |
 | `PAUSED` | Manually paused | `PATCH /:id/pause` | `PATCH /:id/resume` |
 | `REASSESSMENT_REQUIRED` | Prescription expiring; needs new clinical input | Fulfillment cron when Rx near expiry | Patient submits reassessment form |
-| `PAYMENT_FAILED` | Autopay failed and all retries exhausted | After `maxPaymentRetries` failed retries | Manual retry / payment link / `reassign` |
+| `PAYMENT_FAILED` | Autopay failed and all retries exhausted | After `maxPaymentRetries` failed retries | `retry-payment` / `resend-payment-link` / update payment method |
 | `CANCELLED` | Manually cancelled | `PATCH /:id/cancel` | `PATCH /:id/reassign` (revive) |
 | `EXPIRED` | Duration limit reached (terminal) | Cron detects `effectiveDate + duration < now` AND no refills remaining | — |
 
@@ -58,7 +65,7 @@ The `ClientSubscriptionStatus` enum has **10 states** (see `api/prisma/clinic/sc
 | 30 | → **Refills exhausted, duration exceeded** → status moves to `EXPIRED`. | — |
 | 30 | `autopayEnabled = true` → charge saved card. On success: `nextFulfillmentDate += cycle`, `totalCyclesCompleted++`, `consecutiveFailures = 0`. | [`4-autopay/`](./4-autopay/) |
 | 30 | `autopayEnabled = false` → payment link emailed (expires in 3 days). | [`2-enrollment/`](./2-enrollment/) |
-| 33 | If Day-30 autopay failed → payment retry cron attempts charge. Up to `maxPaymentRetries` (default `3`) at `retryIntervalDays` (default `3`) intervals. | [`4-autopay/`](./4-autopay/) |
+| 33 | If Day-30 autopay failed → payment retry cron (10:00 UTC) attempts charge. Up to `maxPaymentRetries` (default `3`) at `retryIntervalDays` (default `3`) intervals. | [`4-autopay/`](./4-autopay/) |
 | 33+ | If max retries exhausted → `PAYMENT_FAILED`. Staff can manually retry via `POST /:id/retry-payment` or resend payment link. | [`4-autopay/`](./4-autopay/) |
 | 60, 90, … | Cycle repeats. Refills consumed one per cycle until exhausted, then a new encounter is auto-created. | — |
 
@@ -197,7 +204,7 @@ Once the first payment clears via `mark-paid`, autopay is enabled by default and
 
 ### Retry cron
 
-`subscription-payment-retry-cron.service.ts` runs periodically. For each subscription where `nextPaymentRetryDate <= now`:
+`subscription-payment-retry-cron.service.ts` runs daily at **10:00 UTC**. For each subscription where `nextPaymentRetryDate <= now`:
 
 - Re-attempt the charge.
 - On success: restore to `ACTIVE` cycle, reset counters.
@@ -251,9 +258,9 @@ The **automated cron logic itself is server-side** — there's no client sample 
 
 | Cron | Schedule | File | What it does |
 | :--- | :--- | :--- | :--- |
+| Reminders | `0 9 * * *` (09:00 UTC daily) | `subscription-reminder-cron.service.ts` | Sends payment-link reminders for unpaid cycles |
+| Payment retry | `0 10 * * *` (10:00 UTC daily) | `subscription-payment-retry-cron.service.ts` | Retries failed autopay charges until `maxPaymentRetries` |
 | Fulfillment | `0 11 * * *` (11:00 UTC daily) | `subscription-fulfillment-cron.service.ts` | Creates refill / encounter orders; charges autopay; sends payment links |
-| Payment retry | Periodic | `subscription-payment-retry-cron.service.ts` | Retries failed autopay charges until `maxPaymentRetries` |
-| Reminders | Configurable tiers | `subscription-reminder-cron.service.ts` | Sends payment-link reminders for unpaid cycles |
 
 ---
 
