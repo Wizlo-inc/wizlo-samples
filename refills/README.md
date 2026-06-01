@@ -4,6 +4,8 @@ End-to-end refill workflow against the Wizlo API. NestJS backend + Next.js front
 
 > A **refill** transmits an already-approved prescription to the pharmacy again. It does **not** create a new prescription — the medication, drug strength, quantity, and directions are fixed at the time the prescription was written. The refill API accepts only `encounterTreatmentId`s.
 
+> **Refills inside a subscription?** This sample covers the standalone refill API (staff-triggered and patient-triggered). For how refills are generated **automatically** by the daily subscription fulfillment cron, see [`../subscriptions/LIFECYCLE.md`](../subscriptions/LIFECYCLE.md).
+
 ---
 
 ## What This Sample Demonstrates

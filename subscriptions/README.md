@@ -2,6 +2,8 @@
 
 Five focused, self-contained NestJS + Next.js 14 samples covering the full Wizlo Subscription API (30+ endpoints). Follow the samples in order — each one builds on the output of the previous.
 
+> **New here?** Read [`LIFECYCLE.md`](./LIFECYCLE.md) first — it explains what happens **between API calls**: the daily fulfillment cron, refill triggers, reassessment, payment retries, and how all five samples fit into one runtime lifecycle.
+
 ## Samples at a Glance
 
 | # | Sample | What it demonstrates | Backend | Frontend |
@@ -11,6 +13,8 @@ Five focused, self-contained NestJS + Next.js 14 samples covering the full Wizlo
 | 3 | [Lifecycle Management](#3-lifecycle-management) | Pause, resume, cancel, delay, resubscribe | `:3022` | `:3032` |
 | 4 | [Autopay](#4-autopay) | Toggle autopay, change payment method, retry | `:3023` | `:3033` |
 | 5 | [Patient Portal](#5-patient-portal) | Patient self-service — view, manage, book labs | `:3024` | `:3034` |
+
+📖 Cross-cutting reference: [`LIFECYCLE.md`](./LIFECYCLE.md) — states, day-by-day timeline, fulfillment decision tree, reassessment paths, cron schedule, and key fields for debugging.
 
 ---
 
