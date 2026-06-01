@@ -1,0 +1,22 @@
+{
+  "name": "chat-widget-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3075",
+    "build": "next build",
+    "start": "next start -p 3075"
+  },
+  "dependencies": {
+    "@wizlo/chat-widget": "^1.0.7",
+    "next": "15.5.16",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  }
+}

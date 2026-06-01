@@ -12,6 +12,8 @@ This repository contains sample code demonstrating how to integrate the Wizlo AP
 | `orders` | Order/subscription management using Wizlo |
 | `payment/with-wizlo` | Payment & subscription plan selection with Wizlo API |
 | `payment/without-wizlo` | Payment UI without Wizlo (standalone) |
+| `chat` | Patient–provider chat integration (list/create threads, messaging, real-time Kafka, provider-network) |
+| `webhooks` | Webhook receiver samples for all Wizlo event modules |
 
 ## Getting Started
 
