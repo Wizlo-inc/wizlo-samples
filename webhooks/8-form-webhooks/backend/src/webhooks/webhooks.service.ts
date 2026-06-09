@@ -12,6 +12,7 @@ interface ReceivedEvent {
 const FORM_EVENTS = [
   'session_started', 'progress_saved', 'completed',
   'product_selected', 'coupon_used', 'disqualified', 'abandoned',
+  'encounter_completed',
 ];
 
 @Injectable()
@@ -30,7 +31,8 @@ export class WebhooksService {
       }
     }
     const rawEvent: string = body.event || '';
-    const eventType = rawEvent.replace('forms.', '') || 'unknown';
+    // Normalize nested events: "forms.encounter.completed" → "encounter_completed"
+    const eventType = rawEvent.replace(/^forms\./, '').replace(/\./g, '_') || 'unknown';
     const event: ReceivedEvent = {
       id: crypto.randomUUID(),
       receivedAt: new Date().toISOString(),
@@ -39,7 +41,11 @@ export class WebhooksService {
     };
     this.events.unshift(event);
     if (this.events.length > 100) this.events.pop();
-    console.log(`[Webhook] forms.${eventType} — form: ${body.data?.form_name || '?'} session: ${body.data?.session_id?.slice(0, 8) || '?'} at ${event.receivedAt}`);
+    const formName = body.form_name || body.data?.form_name || '?';
+    const detail = eventType === 'encounter_completed'
+      ? `encounter: ${body.encounter_id || '?'} patient: ${body.patient_id?.slice(0, 8) || '?'}`
+      : `session: ${body.data?.session_id?.slice(0, 8) || '?'}`;
+    console.log(`[Webhook] forms.${eventType} — form: ${formName} ${detail} at ${event.receivedAt}`);
     return { status: 'received', id: event.id };
   }
 

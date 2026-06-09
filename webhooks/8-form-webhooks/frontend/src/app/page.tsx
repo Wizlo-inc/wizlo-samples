@@ -6,6 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3047';
 const FORM_EVENTS = [
   'session_started', 'progress_saved', 'completed',
   'product_selected', 'coupon_used', 'disqualified', 'abandoned',
+  'encounter_completed',
 ];
 
 const EVENT_BADGE: Record<string, string> = {
@@ -16,6 +17,7 @@ const EVENT_BADGE: Record<string, string> = {
   coupon_used: 'badge-orange',
   disqualified: 'badge-red',
   abandoned: 'badge-red',
+  encounter_completed: 'badge-active',
   unknown: 'badge-yellow',
 };
 
@@ -76,16 +78,24 @@ export default function Page() {
   const filtered = filter === 'all' ? events : events.filter(e => e.eventType === filter);
 
   function getSummary(ev: WebhookEvent) {
-    const d = ev.payload?.data || {};
     const parts: string[] = [];
-    if (d.form_name) parts.push(d.form_name);
-    if (d.session_id) parts.push(`session: ${d.session_id.slice(0, 8)}…`);
-    if (d.current_page && d.total_pages) parts.push(`page ${d.current_page}/${d.total_pages}`);
-    if (d.completion_percentage !== undefined) parts.push(`${d.completion_percentage}%`);
-    if (d.patient_email) parts.push(d.patient_email);
-    if (d.coupon_code) parts.push(`coupon: ${d.coupon_code}`);
-    if (d.reason) parts.push(`reason: ${d.reason}`);
-    if (d.product?.productName) parts.push(d.product.productName);
+    if (ev.eventType === 'encounter_completed') {
+      const p = ev.payload || {};
+      if (p.form_name) parts.push(p.form_name);
+      if (p.encounter_id) parts.push(`encounter: ${p.encounter_id}`);
+      if (p.patient_id) parts.push(`patient: ${p.patient_id.slice(0, 8)}…`);
+      if (p.external_order_identifier) parts.push(`ext: ${p.external_order_identifier}`);
+    } else {
+      const d = ev.payload?.data || {};
+      if (d.form_name) parts.push(d.form_name);
+      if (d.session_id) parts.push(`session: ${d.session_id.slice(0, 8)}…`);
+      if (d.current_page && d.total_pages) parts.push(`page ${d.current_page}/${d.total_pages}`);
+      if (d.completion_percentage !== undefined) parts.push(`${d.completion_percentage}%`);
+      if (d.patient_email) parts.push(d.patient_email);
+      if (d.coupon_code) parts.push(`coupon: ${d.coupon_code}`);
+      if (d.reason) parts.push(`reason: ${d.reason}`);
+      if (d.product?.productName) parts.push(d.product.productName);
+    }
     return parts.join(' · ');
   }
 
