@@ -1,6 +1,5 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { LocationsService } from './locations.service';
-import { CitiesQueryDto } from './dto/cities-query.dto';
 
 @Controller('locations')
 export class LocationsController {
@@ -18,9 +17,9 @@ export class LocationsController {
     return this.service.getStates();
   }
 
-  // GET /locations/cities/:stateId?search=  → Wizlo GET /cities/state/:stateId/search
-  @Get('cities/:stateId')
-  getCities(@Param('stateId') stateId: string, @Query() query: CitiesQueryDto) {
-    return this.service.getCitiesByState(stateId, query);
-  }
+  // NOTE: There is intentionally no "cities" route. The Wizlo City entity is
+  // deprecated — city is now a free-text field. The legacy lookup endpoints
+  // (GET /cities/..., GET /states/:id/cities) are kept only for backwards
+  // compatibility and the latter returns 410 Gone. New integrations capture
+  // city as plain text (see the frontend's free-text City input).
 }

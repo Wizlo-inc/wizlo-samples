@@ -26,10 +26,11 @@ import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 export class WizloService {
   private readonly logger = new Logger(WizloService.name);
   private accessToken: string | null = null;
+  private tokenExpiresAt = 0;
 
-  // --- M2M token (cached) -----------------------------------------------
+  // --- M2M token (cached with TTL) --------------------------------------
 
-  private async fetchToken(): Promise<string> {
+  private async fetchToken(): Promise<{ access_token: string; expires_in?: number }> {
     let res: Response;
     try {
       res = await fetch(`${process.env.WIZLO_BASE_URL}/oauth/token`, {
@@ -52,14 +53,14 @@ export class WizloService {
       try { parsed = JSON.parse(body); } catch { parsed = { message: body || 'Auth failed' }; }
       throw new HttpException(parsed, res.status);
     }
-    const data = (await res.json()) as { access_token: string };
-    return data.access_token;
+    return (await res.json()) as { access_token: string; expires_in?: number };
   }
 
   private async getToken(): Promise<string> {
-    if (!this.accessToken) {
-      this.accessToken = await this.fetchToken();
-    }
+    if (this.accessToken && Date.now() < this.tokenExpiresAt) return this.accessToken;
+    const data = await this.fetchToken();
+    this.accessToken = data.access_token;
+    this.tokenExpiresAt = Date.now() + ((data.expires_in ?? 3600) - 60) * 1000;
     return this.accessToken;
   }
 
@@ -123,6 +124,7 @@ export class WizloService {
     if (res.status === 401) {
       this.logger.warn(`401 on ${endpoint} — refreshing token and retrying`);
       this.accessToken = null;
+      this.tokenExpiresAt = 0;
       token = await this.getToken();
       res = await doFetch(token);
     }

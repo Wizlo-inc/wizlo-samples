@@ -9,7 +9,6 @@ async function call<T>(path: string): Promise<T> {
 
 export interface Country { id: string; name: string; shortName: string; phoneCode?: number }
 export interface State { id: string; name: string; shortName: string; countryId: string; country?: { id: string; name: string; shortName: string } }
-export interface City { id: string; name: string; stateId: string }
 
 export function getCountries() {
   return call<Country[]>('/locations/countries');
@@ -19,7 +18,5 @@ export function getStates() {
   return call<State[]>('/locations/states');
 }
 
-export function getCitiesByState(stateId: string, search?: string) {
-  const qs = search ? `?search=${encodeURIComponent(search)}` : '';
-  return call<City[]>(`/locations/cities/${encodeURIComponent(stateId)}${qs}`);
-}
+// NOTE: No getCitiesByState — the Wizlo City entity is deprecated and city is
+// now a free-text field. Capture city as plain text instead of looking up IDs.

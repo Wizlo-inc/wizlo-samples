@@ -9,7 +9,7 @@ appointment, and subscription-enrollment flows.
 | # | Sample | What it demonstrates | Backend | Frontend |
 |---|--------|----------------------|:-------:|:--------:|
 | 1 | [Available Slots](#1-available-slots) | Provider telehealth slots & PSC lab slots (`type=provider` / `type=lab`) | `:3080` | `:3090` |
-| 2 | [Locations](#2-locations) | Countries, states, and cities-by-state for address forms | `:3081` | `:3091` |
+| 2 | [Locations](#2-locations) | Countries & states for address forms (city is free-text) | `:3081` | `:3091` |
 | 3 | [Documents](#3-documents) | Upload a document to a patient from a remote URL | `:3082` | `:3092` |
 
 > **Where these are used**
@@ -17,7 +17,7 @@ appointment, and subscription-enrollment flows.
 >   provider availability (`type=provider`), let the patient pick, then schedule.
 > - **Available slots also backs lab slot selection during subscription enrollment**
 >   (`type=lab`) — list PSC walk-in availability near the patient's ZIP.
-> - Locations back the country/state/city dropdowns on intake & shipping forms.
+> - Locations back the country/state dropdowns on intake & shipping forms (city is free-text).
 > - Documents-from-URL pulls signed PDFs from external intake / lab providers
 >   straight onto a patient's profile.
 
@@ -70,7 +70,7 @@ npm run dev                 # http://localhost:3090
 
 ## 2. Locations
 
-Reference data for address forms — a cascading country → state → city picker.
+Reference data for address forms — country + state lookups, with a free-text city.
 
 <!-- ![Locations](./screenshots/2-locations.png) -->
 
@@ -80,10 +80,11 @@ Reference data for address forms — a cascading country → state → city pick
 |--------|-----------------|------------------|-------------|
 | `GET` | `/locations/countries` | `GET /countries` | All countries |
 | `GET` | `/locations/states` | `GET /states` | All states (with nested country) |
-| `GET` | `/locations/cities/:stateId?search=` | `GET /cities/state/:stateId/search` | Cities in a state (search, capped 20) |
 
-All three use the tenant **M2M admin token**. See
-[`2-locations/README.md`](./2-locations/README.md).
+Both use the tenant **M2M admin token**. **City is intentionally not an API call** —
+the Wizlo City entity is deprecated (the legacy `/cities/*` endpoints are backwards-compat
+only and `GET /states/:id/cities` returns `410 Gone`), so city is captured as **free text**.
+See [`2-locations/README.md`](./2-locations/README.md).
 
 ### Running Locally
 
@@ -167,5 +168,5 @@ image tags above:
 | File | Capture |
 |------|---------|
 | `screenshots/1-available-slots.png` | Provider/Lab toggle with a populated slot grid |
-| `screenshots/2-locations.png` | Countries + states columns with a state selected and cities loaded |
+| `screenshots/2-locations.png` | Countries + states columns with a state selected and a free-text city entered |
 | `screenshots/3-documents.png` | Upload result card with the document summary |
