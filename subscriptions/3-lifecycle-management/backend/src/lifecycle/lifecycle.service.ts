@@ -45,6 +45,10 @@ export class LifecycleService {
   }
 
   async cancel(id: string, dto: CancelDto) {
+    // NOTE: the admin cancel endpoint takes no request body — it cancels without
+    // recording a reason. The reason/description body is consumed only by the
+    // PATIENT cancel endpoint (/tenants/patient-subscriptions/:id/cancel, Sample 5).
+    // The body is sent here to mirror that shape but is ignored by this endpoint.
     return this.wizlo.request(`/tenants/client-subscriptions/${id}/cancel`, {
       method: 'PATCH',
       body: JSON.stringify(dto),

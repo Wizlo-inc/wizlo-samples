@@ -1,6 +1,6 @@
 # Wizlo Refills Sample
 
-End-to-end refill workflow against the Wizlo API. NestJS backend + Next.js frontend, structured the same way as the [`orders/`](../orders) and [`intake-form/`](../intake-form) samples from Sprint 1.
+End-to-end refill workflow against the Wizlo API. NestJS backend + Next.js frontend, structured the same way as the [`orders/`](../orders) sample.
 
 > A **refill** transmits an already-approved prescription to the pharmacy again. It does **not** create a new prescription — the medication, drug strength, quantity, and directions are fixed at the time the prescription was written. The refill API accepts only `encounterTreatmentId`s.
 
@@ -14,7 +14,7 @@ End-to-end refill workflow against the Wizlo API. NestJS backend + Next.js front
 - Listing refillable encounters & treatments for a patient
 - Creating a refill order with one or many treatments — including the staff-only `bypassDaysOfSupply` override
 - Marking the order paid and transmitting the Rx to the pharmacy provider
-- Handling the two failure modes the docs call out: `no_refills_remaining` and `cannot_refill_now`
+- Handling the two refill failure modes: `no_refills_remaining` and `next_refill_in_x_days`
 
 ---
 
@@ -32,7 +32,7 @@ refills/
 │       ├── eligibility/     ← Step 1
 │       ├── refill-orders/   ← Step 2
 │       └── rx-submission/   ← Step 3
-├── frontend/                ← Next.js 14 App Router at :3013
+├── frontend/                ← Next.js 15 App Router at :3013
 │   └── src/
 │       ├── lib/api.ts       ← thin client for the backend
 │       └── app/

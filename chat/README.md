@@ -5,7 +5,7 @@ This directory contains sample implementations for the Wizlo Chat integration, o
 There are **two ways to integrate chat**, and this folder covers both:
 
 - **A. Drop-in widget** — mount Wizlo's prebuilt `@wizlo/chat-widget` React component and write almost no chat code (**Sample 6**). Order-based `/chats/*` API, a **user** token, and Azure Communication Services in the browser for real-time.
-- **B. Headless REST** — call the third-party **Chat (V2) API** and build your own UI (**Samples 1–5**). Encounter-based `/chats-v2/*`, an **M2M** token, and Kafka/webhook/polling for real-time. ACS internals are hidden from the V2 responses; every thread is keyed by an **encounter ID** (GFE ID, e.g. `ES000001`).
+- **B. Headless REST** — call the third-party **Chat (V2) API** and build your own UI (**Samples 1–5**). Encounter-based `/chats-v2/*`, a **user-scoped token** (minted from your M2M client credentials via `/oauth/user-token`, because the V2 endpoints filter by the acting user), and Kafka/webhook/polling for real-time. ACS internals are hidden from the V2 responses; every thread is keyed by an **encounter ID** (GFE ID, e.g. `ES000001`).
 
 See the [Chat Integration Guide](https://docs.wizlo.com/guides/chat-integration) for the full picture.
 

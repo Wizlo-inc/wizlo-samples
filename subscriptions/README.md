@@ -1,6 +1,6 @@
 # Wizlo Subscription Module — Samples
 
-Five focused, self-contained NestJS + Next.js 14 samples covering the full Wizlo Subscription API (30+ endpoints). Follow the samples in order — each one builds on the output of the previous.
+Five focused, self-contained NestJS + Next.js 15 samples covering the full Wizlo Subscription API (30+ endpoints). Follow the samples in order — each one builds on the output of the previous.
 
 > **New here?** Read [`LIFECYCLE.md`](./LIFECYCLE.md) first — it explains what happens **between API calls**: the daily fulfillment cron, refill triggers, reassessment, payment retries, and how all five samples fit into one runtime lifecycle.
 
@@ -130,7 +130,6 @@ npm run dev                 # http://localhost:3031
 | `effectiveDate` | `ISO date` | | Defaults to today |
 | `duration` | `number\|null` | | Months; `null` = infinite |
 | `clinicId` | `UUID` | | Clinic to associate |
-| `deferEncounterCreation` | `boolean` | | Default `false` |
 
 **Mark Paid**
 
@@ -167,7 +166,7 @@ PAYMENT_FAILED ──(retry)────────► ACTIVE
 | `GET` | `/tenants/client-subscriptions/stats` | Dashboard counts by status |
 | `PATCH` | `/tenants/client-subscriptions/:id/pause` | Pause (optional `pausedUntilDate`) |
 | `PATCH` | `/tenants/client-subscriptions/:id/resume` | Resume a paused subscription |
-| `PATCH` | `/tenants/client-subscriptions/:id/cancel` | Cancel with reason |
+| `PATCH` | `/tenants/client-subscriptions/:id/cancel` | Cancel a subscription (admin — no request body) |
 | `PATCH` | `/tenants/client-subscriptions/:id/delay` | Push next fulfillment date |
 | `PATCH` | `/tenants/client-subscriptions/:id/resubscribe` | Re-enroll a cancelled subscription |
 | `GET` | `/tenants/client-subscriptions/:id/timeline` | Full audit trail with timestamps |
@@ -193,12 +192,14 @@ npm run dev                 # http://localhost:3032
 | Action | Required Fields | Optional Fields |
 |--------|----------------|-----------------|
 | Pause | — | `pausedUntilDate` (ISO date) |
-| Cancel | `reason` (see below) | `description` |
+| Cancel | — | — (admin endpoint takes no body) |
 | Delay | `newFulfillmentDate` (ISO date) | — |
 | Resubscribe | — | — |
 | Resume | — | — |
 
-**Cancellation Reasons**
+> **Cancellation reason — admin vs patient:** This admin endpoint (`/tenants/client-subscriptions/:id/cancel`) takes **no body** and cancels without recording a reason. The `reason` (required) + optional `description` shape below belongs to the **patient** cancel endpoint (`/tenants/patient-subscriptions/:id/cancel`, Sample 5).
+
+**Cancellation Reasons** (patient cancel endpoint — Sample 5)
 - `I am experiencing too many side effects`
 - `Completed the current treatment`
 - `Too expensive`

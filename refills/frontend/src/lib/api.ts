@@ -86,8 +86,8 @@ export interface Treatment {
     remainingRefills: number;
     canRefillNow: boolean;
     daysUntilNextRefill?: number;
-    status?: string;
-    statusMessage?: string;
+    // `reason` is the eligibility status (e.g. no_refills_remaining,
+    // next_refill_in_x_days), present only when canRefillNow is false.
     reason?: string;
   };
   pricing?: {

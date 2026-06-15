@@ -23,6 +23,8 @@ Step 4: On success → POST /client-subscriptions/mark-paid  → ACTIVE
 Step 5: Confirmation → GET /client-subscriptions/:id + orders + transactions
 ```
 
+> **Status after `mark-paid`:** For a simple product plan (this sample's target) the subscription becomes `ACTIVE`. Plans that require a lab or a telehealth visit instead land on `PENDING_LAB_SCHEDULING` or `AWAITING_APPOINTMENT` until that step is completed.
+
 > **Demo note:** Gr4vy embed requires loading `https://cdn.gr4vy.app/embed.js` and calling
 > `new Gr4vy({ token, ... })`. In this sample, Step 3 is simulated — enter the
 > `transactionId` returned by Gr4vy to trigger `mark-paid`.
@@ -54,7 +56,6 @@ npm run dev          # http://localhost:3031
 | `effectiveDate` | `ISO date` | | Defaults to today |
 | `duration` | `number\|null` | | Months; `null` = infinite |
 | `clinicId` | `UUID` | | Clinic to associate |
-| `deferEncounterCreation` | `boolean` | | Default `false` |
 
 ### Checkout
 

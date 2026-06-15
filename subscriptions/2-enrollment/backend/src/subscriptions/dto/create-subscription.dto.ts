@@ -1,4 +1,4 @@
-import { IsUUID, IsString, IsOptional, IsDateString, IsNumber, IsBoolean, IsArray, IsInt, Min } from 'class-validator';
+import { IsUUID, IsString, IsOptional, IsDateString, IsArray, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateSubscriptionDto {
@@ -35,8 +35,4 @@ export class CreateSubscriptionDto {
   @IsOptional()
   @IsUUID()
   clinicId?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  deferEncounterCreation?: boolean;
 }

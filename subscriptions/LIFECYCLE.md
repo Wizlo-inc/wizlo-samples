@@ -186,7 +186,7 @@ Available from both staff endpoints ([`3-lifecycle-management/`](./3-lifecycle-m
 | **Pause** | `ACTIVE` | `PAUSED` | Blocked if within `pauseCutoffDays` of next fulfillment. Optional `pausedUntilDate` (auto-resume not yet active — manual resume required today) |
 | **Resume** | `PAUSED` | `ACTIVE` | Immediate |
 | **Delay** | `ACTIVE`, `PAUSED` | unchanged | Moves `nextFulfillmentDate` forward. New date must be later than current value |
-| **Cancel** | any non-`EXPIRED` | `CANCELLED` | Reason required. Stores `cancellationReason: { reason, description }` |
+| **Cancel** | any non-`EXPIRED` | `CANCELLED` | The **patient** endpoint requires a reason (stored as `cancellationReason: { reason, description }`); the **staff/admin** endpoint takes no body and cancels without recording a reason |
 | **Reassign** | `CANCELLED` | `ACTIVE` | Resets `nextFulfillmentDate = now`, clears `consecutiveFailures` |
 
 ---
@@ -230,7 +230,7 @@ Two independent fields govern subscription longevity:
 | Field | Lives on | Meaning |
 | :--- | :--- | :--- |
 | `duration` (months) | ClientSubscription | When `effectiveDate + duration <= now` AND refills are exhausted, the next cron pass moves it to `EXPIRED`. `null` means infinite. |
-| `maxRenewal` | SubscriptionPlan | Informational cap on total renewal cycles. **Does not auto-expire the subscription**; checked via `hasReachedMaxRenewals()`. |
+| `maxRenewal` | SubscriptionPlan | Informational cap on total renewal cycles. **Does not auto-expire the subscription** — it's tracked via `totalRenewalsUsed`, but expiry is determined by `duration` only. |
 
 A duration limit only triggers expiry **when combined with exhausted refills** — an active subscription with refills remaining keeps cycling even if its duration window has passed. The platform finishes the current Rx before terminating.
 

@@ -33,7 +33,9 @@ export class PortalService {
   }
 
   async getById(id: string) {
-    return this.wizlo.request(`/tenants/patient-subscriptions/${id}`);
+    // includeBilling=true makes the API return the billingInformation breakdown
+    // (subtotal, discount, platformFee, shipping, grandTotal) used by the Billing tab.
+    return this.wizlo.request(`/tenants/patient-subscriptions/${id}?includeBilling=true`);
   }
 
   async pause(id: string, dto: PauseDto) {

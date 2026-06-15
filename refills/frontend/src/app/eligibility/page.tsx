@@ -232,11 +232,10 @@ export default function EligibilityPage() {
                           <td style={{ fontSize: 13, color: '#718096' }}>
                             {can
                               ? '—'
-                              : info?.statusMessage ??
-                                info?.reason ??
+                              : info?.reason ??
                                 (info?.remainingRefills === 0
                                   ? 'no_refills_remaining'
-                                  : 'cannot_refill_now')}
+                                  : 'next_refill_in_x_days')}
                           </td>
                           <td className="mono" style={{ fontSize: 11 }}>
                             {t.encounterTreatmentId}

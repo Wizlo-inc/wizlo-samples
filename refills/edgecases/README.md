@@ -10,9 +10,9 @@ Standalone NestJS + Next.js sample covering refill **failure-mode handling**, br
 
 - Two refill failure modes the API returns as `400 REFILL_NOT_ELIGIBLE`:
   - **`no_refills_remaining`** — `refillInfo.remainingRefills === 0`. Not recoverable through the refill API; a new encounter is required.
-  - **`cannot_refill_now`** — `refillInfo.canRefillNow === false` while `remainingRefills > 0`. Recoverable either by waiting out the days-of-supply window, or via the staff-only `bypassDaysOfSupply` override.
+  - **`next_refill_in_x_days`** — `refillInfo.canRefillNow === false` while `remainingRefills > 0`. Recoverable either by waiting out the days-of-supply window, or via the staff-only `bypassDaysOfSupply` override.
 - A live scanner that walks the patient's encounters and finds a real treatment matching each failure mode, so you can reproduce the 400 against UAT.
-- A reference table of all four eligibility `reason` codes and which ones the bypass flag can override.
+- A reference table of the eligibility `reason` codes and which ones the bypass flag can override.
 
 ---
 
@@ -29,7 +29,7 @@ refills/edgecases/
 │       ├── wizlo/           ← OAuth + HTTP helper (shared)
 │       ├── eligibility/     ← scan for failing treatments
 │       └── refill-orders/   ← reproduce the 400 / exercise bypass
-└── frontend/                ← Next.js 14 App Router at :3014
+└── frontend/                ← Next.js 15 App Router at :3014
     └── src/
         ├── lib/api.ts
         └── app/
@@ -80,11 +80,15 @@ npm run dev
 
 ## Eligibility reason reference
 
+The treatments endpoint sets `refillInfo.reason` to the treatment's eligibility `status` whenever `canRefillNow` is `false` (it's omitted when the treatment is refillable). There are only two such values:
+
 | `reason` | Trigger | Bypass via `bypassDaysOfSupply`? |
 |---|---|---|
-| `no_refills_remaining` | `remainingRefills === 0` | ❌ Needs a new encounter |
-| `days_of_supply_not_elapsed` | Too soon since last fill | ✅ Staff-only override |
-| `prescription_expired` | Past one-year validity | ❌ Needs a new encounter |
-| `treatment_not_indicated` | Treatment never marked indicated | ❌ Reviewer must mark indicated first |
+| `no_refills_remaining` | `remainingRefills === 0` **or** the prescription is past its validity date — both collapse into this single `reason` (the backend tracks them apart internally, but this endpoint only exposes the `reason` code) | ❌ Needs a new encounter |
+| `next_refill_in_x_days` | Has refills and a valid prescription, but the days-of-supply window since the last fill hasn't elapsed | ✅ Staff-only override |
+
+> Treatments that were never marked `indicated` by the reviewer don't get a reason here — the staff treatments endpoint only returns `indicated` treatments, so non-indicated ones never appear in the list at all.
+
+When a refillable treatment is found, `status` is `refill_required` (and `reason` is omitted).
 
 Map these to UI messages and recovery CTAs **before** the user clicks "Refill" — surfacing a 400 to the patient is the wrong UX.

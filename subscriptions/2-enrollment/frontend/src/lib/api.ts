@@ -13,7 +13,6 @@ export function createSubscription(data: {
   effectiveDate?: string;
   duration?: number;
   clinicId?: string;
-  deferEncounterCreation?: boolean;
 }) {
   return call('/subscriptions', {
     method: 'POST',

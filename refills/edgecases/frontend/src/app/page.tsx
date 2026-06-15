@@ -9,7 +9,7 @@
  *
  *   A) no_refills_remaining       → remainingRefills = 0. Recoverable only by
  *                                    creating a new encounter.
- *   B) cannot_refill_now          → canRefillNow = false but remainingRefills > 0.
+ *   B) next_refill_in_x_days      → canRefillNow = false but remainingRefills > 0.
  *                                    Patient waits, or staff bypasses with
  *                                    bypassDaysOfSupply: true.
  *
@@ -307,7 +307,7 @@ export default function EdgeCasesPage() {
                   remainingRefills: windowMatch.treatment.refillInfo?.remainingRefills,
                   canRefillNow: windowMatch.treatment.refillInfo?.canRefillNow,
                   daysUntilNextRefill: windowMatch.treatment.refillInfo?.daysUntilNextRefill,
-                  statusMessage: windowMatch.treatment.refillInfo?.statusMessage,
+                  reason: windowMatch.treatment.refillInfo?.reason,
                 },
                 null,
                 2,
@@ -348,6 +348,11 @@ export default function EdgeCasesPage() {
 
       <div className="card">
         <h3>Eligibility reason codes</h3>
+        <p style={{ marginBottom: 12, fontSize: 14, color: '#4a5568' }}>
+          <code>refillInfo.reason</code> is set to the treatment&apos;s eligibility{' '}
+          <code>status</code> only when <code>canRefillNow === false</code> (it&apos;s omitted
+          when the treatment is refillable). Only two values can appear:
+        </p>
         <table>
           <thead>
             <tr>
@@ -359,26 +364,21 @@ export default function EdgeCasesPage() {
           <tbody>
             <tr>
               <td className="mono">no_refills_remaining</td>
-              <td>remainingRefills === 0</td>
+              <td>remainingRefills === 0, or prescription past its validity date</td>
               <td><span className="badge badge-red">No</span></td>
             </tr>
             <tr>
-              <td className="mono">days_of_supply_not_elapsed</td>
-              <td>Too soon since last fill</td>
+              <td className="mono">next_refill_in_x_days</td>
+              <td>Has refills, but days-of-supply window not yet elapsed</td>
               <td><span className="badge badge-green">Yes (staff only)</span></td>
-            </tr>
-            <tr>
-              <td className="mono">prescription_expired</td>
-              <td>Past one-year validity</td>
-              <td><span className="badge badge-red">No</span></td>
-            </tr>
-            <tr>
-              <td className="mono">treatment_not_indicated</td>
-              <td>Not marked indicated by provider</td>
-              <td><span className="badge badge-red">No</span></td>
             </tr>
           </tbody>
         </table>
+        <p style={{ marginTop: 12, fontSize: 13, color: '#718096' }}>
+          A refillable treatment reports <code>status: refill_required</code> with{' '}
+          <code>reason</code> omitted. Treatments never marked <code>indicated</code> don&apos;t
+          appear here at all — the staff endpoint only returns indicated treatments.
+        </p>
         <p style={{ marginTop: 14, fontSize: 14, color: '#4a5568' }}>
           Map these to UI messages and recovery CTAs before the user hits the API. The main happy-
           path workflow lives at{' '}

@@ -281,7 +281,7 @@ export default function PatientPortalPage() {
                       ['Plan Price', (selected.price ?? selected.planPrice) != null ? `$${Number(selected.price ?? selected.planPrice).toFixed(2)}` : '—'],
                       ['Cycle', selected.fulfillmentCycle ? `Every ${selected.fulfillmentInterval} ${String(selected.fulfillmentCycle).toLowerCase()}` : '—'],
                       ...(subInfo ? [
-                        ['Effective Date', subInfo.effectiveDate ? new Date(String(subInfo.effectiveDate)).toLocaleDateString() : '—'],
+                        ['Effective Date', subInfo.activationDate ? new Date(String(subInfo.activationDate)).toLocaleDateString() : '—'],
                         ['Renewals Left', subInfo.maxRenewal != null ? String(subInfo.maxRenewal) : 'Unlimited'],
                       ] : []),
                     ].map(([k, v]) => (
