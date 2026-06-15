@@ -14,6 +14,7 @@ This repository contains sample code demonstrating how to integrate the Wizlo AP
 | `payment/without-wizlo` | Payment UI without Wizlo (standalone) |
 | `chat` | Patient–provider chat integration (list/create threads, messaging, real-time Kafka, provider-network) |
 | `webhooks` | Webhook receiver samples for all Wizlo event modules |
+| `utilities` | Cross-cutting utility endpoints — available slots (provider & lab), locations (countries/states/cities), documents (upload-from-url) |
 
 ## Getting Started
 
